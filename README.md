@@ -19,43 +19,88 @@
 
 ---
 
-# Capítulo I: Introducción
-En los sistemas de información actuales, la disponibilidad y la confiabilidad de los datos constituyen un requisito esencial para el funcionamiento de aplicaciones críticas. El crecimiento exponencial de usuarios y la necesidad de realizar operaciones en tiempo real hacen que la base de datos, como núcleo del sistema, pueda convertirse en un cuello de botella.  
-Frente a esta problemática, la **replicación de bases de datos** se presenta como una técnica fundamental que permite garantizar la continuidad del servicio, mejorar el rendimiento y asegurar mecanismos de recuperación ante desastres.  
+# Capítulo I: Introducción  
 
-El presente proyecto plantea un estudio teórico-práctico sobre la replicación de bases de datos, analizando sus fundamentos conceptuales y evaluando su implementación en un entorno de laboratorio.  
-Se busca explorar los beneficios y las limitaciones de las distintas modalidades de replicación y comprender cómo impactan en la consistencia, la disponibilidad y el rendimiento de los sistemas.  
+Los sistemas de información modernos requieren alta disponibilidad, baja latencia y escalabilidad bajo alta demanda.  
+La base de datos suele ser un recurso compartido crítico y un posible cuello de botella.  
 
-**Problema:** ¿Cómo garantizar disponibilidad, consistencia y rendimiento en un sistema de gestión de reservas con alta concurrencia de lecturas y escrituras críticas?  
+La **replicación de datos**, entendida como el mantenimiento de copias sincronizadas en uno o más nodos, es una técnica esencial para:  
 
-**Objetivo general:** Comprender, implementar y evaluar réplicas de bases de datos en un entorno controlado, midiendo su impacto en escenarios de uso realista.  
+1. Distribuir la carga de trabajo (principalmente lecturas).  
+2. Aumentar la tolerancia a fallos y reducir el tiempo de inactividad.  
+3. Implementar estrategias de recuperación ante desastres.  
 
-**Objetivos específicos:**  
-1. Analizar los diferentes tipos de replicación (lógica, física, síncrona, asíncrona, semi-síncrona).  
-2. Implementar un entorno de laboratorio con instancias maestro y réplicas.  
-3. Medir métricas clave como latencia de replicación, consistencia de datos y tiempo de recuperación ante fallos.  
-4. Comparar los resultados obtenidos con la teoría y documentar hallazgos y recomendaciones.  
+Sin embargo, la replicación conlleva decisiones arquitectónicas que implican compromisos:  
+consistencia vs. disponibilidad, latencia adicional en modos síncronos, riesgo de lecturas obsoletas en esquemas asíncronos y complejidad operativa (configuración, monitoreo y manejo de fallas).  
+
+Este proyecto aborda de manera sistemática los fundamentos teóricos y su futura implementación práctica.  
+
+Como caso de estudio, se analiza la implementación de un **sistema de información orientado a la gestión de reservas de productos**.  
+El sistema debe permitir operaciones de lectura (consultar productos, precios, disponibilidad, reseñas) y escritura (realizar reservas, registrar usuarios, generar pedidos).  
+
+Dado que la mayoría de las operaciones son lecturas concurrentes, pero también existen transacciones críticas de escritura, la base de datos puede convertirse en un cuello de botella.  
+Por ello, se propone implementar una **replicación maestro–esclavo** para:  
+
+- Distribuir la carga de consultas de lectura hacia las réplicas.  
+- Mantener las escrituras en un único nodo maestro.  
+- Garantizar disponibilidad del sistema en caso de fallo del nodo principal.  
+
+El entorno permitirá evaluar el comportamiento de la réplica tanto en consistencia de datos (sincronización) como en disponibilidad (respuesta ante fallas o desconexiones).  
+El caso de estudio se desarrollará en un **laboratorio virtual**, simulando un entorno real de comercio electrónico.  
+El enfoque estará puesto en la **replicación asíncrona y semi-síncrona**, midiendo latencia y capacidad de recuperación.  
 
 ---
 
-# Capítulo II: Marco Conceptual
-La replicación de bases de datos consiste en mantener múltiples copias de un mismo conjunto de datos en distintas instancias de un sistema gestor, con el fin de aumentar la disponibilidad y la tolerancia a fallos.  
-Este mecanismo permite que las consultas de lectura se distribuyan entre varias réplicas, aliviando la carga del nodo maestro, mientras que las operaciones de escritura se centralizan en un punto de control.  
+# Capítulo II: Marco Conceptual  
 
-**Principales enfoques de replicación:**  
-- **Replicación transaccional:** asegura que los cambios confirmados se apliquen de forma consistente en las réplicas.  
-- **Replicación lógica:** basada en eventos de alto nivel (instrucciones SQL).  
-- **Replicación física:** propagación a nivel de bloques o logs binarios.  
-- **Replicación síncrona:** garantiza consistencia fuerte pero añade latencia.  
-- **Replicación asíncrona:** ofrece mejor rendimiento pero puede producir lecturas obsoletas.  
-- **Replicación semi-síncrona:** equilibrio entre las dos anteriores.  
+## 2.1 Conceptos básicos de replicación  
 
-**Topologías comunes:**  
-- Maestro con múltiples réplicas.  
-- Replicación en cascada.  
-- Clústeres con consenso.  
+La replicación es el proceso de **propagar cambios** desde una instancia principal (Maestro) hacia una o más instancias secundarias (Réplicas) para mantener copias alineadas de los datos.  
+Los cambios pueden transmitirse como eventos lógicos (por ejemplo: `INSERT`, `UPDATE`, `DELETE`) o como bloques físicos de log.  
 
-Cada modalidad se adecua a diferentes escenarios: sistemas de comercio electrónico con consultas intensivas, sistemas de telemetría con alta escritura o despliegues multi-región que buscan acercar los datos a los usuarios.  
+**Objetivos típicos:**  
+- Escalar lecturas distribuyendo consultas `SELECT` en réplicas.  
+- Asegurar alta disponibilidad: continuidad del servicio ante fallas del Maestro.  
+- Facilitar recuperación ante desastres y realizar backups sin sobrecargar el Maestro.  
+
+---
+
+## 2.2 Tipos de replicación  
+
+### Replicación transaccional  
+Modelo clásico en el que los cambios confirmados se propagan garantizando propiedades transaccionales en el destino.  
+Es un caso particular de **replicación lógica**, centrada en la consistencia y el control sobre qué objetos se replican.  
+
+### Según el modo temporal  
+
+- **Asíncrona:**  
+  El Maestro confirma transacciones sin esperar a las réplicas.  
+  Riesgo de pérdida temporal de datos (`RPO > 0`) y lecturas obsoletas.  
+
+- **Semi-síncrona:**  
+  El Maestro espera al menos una confirmación antes de finalizar el commit.  
+  Reduce el `RPO` con ligera penalización de latencia.  
+
+- **Síncrona:**  
+  Requiere confirmación de múltiples réplicas antes del commit.  
+  Favorece consistencia fuerte (`RPO ≈ 0`) a costa de mayor latencia.  
+
+---
+
+## 2.3 Topologías comunes  
+
+- **Maestro con réplicas de lectura:** la más usada para distribuir lecturas.  
+- **Replicación en cascada:** las réplicas a su vez actúan como fuentes para otras réplicas.  
+- **Clúster síncrono con consenso:** varios nodos participan de la toma de decisiones (ejemplo: *InnoDB Cluster*).  
+
+---
+
+## 2.4 Casos de uso representativos  
+
+- **Lectura intensiva:** e-commerce, reservas, catálogos.  
+- **Escritura intensiva:** telemetría, IoT, logística.  
+- **Analítica y backups:** réplicas dedicadas a ETL o copias en caliente.  
+- **Multi-región:** acercar lecturas al usuario y reducir latencia percibida.  
 
 ---
 
