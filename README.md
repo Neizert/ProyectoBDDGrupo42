@@ -63,49 +63,42 @@ Cada modalidad se adecua a diferentes escenarios: sistemas de comercio electrón
 La metodología aplicada en este trabajo se divide en dos fases: **teórica** y **práctica**.  
 
 - En la fase teórica se revisaron conceptos fundamentales de replicación mediante bibliografía académica y documentación oficial de motores de bases de datos como MySQL.  
-- En la fase práctica se diseñó un laboratorio controlado que permitió implementar y probar distintos modos de replicación.  
+- En la fase práctica se diseñara un laboratorio controlado que permitira implementar y probar distintos modos de replicación.
 
-**Actividades realizadas:**  
+**Actividades a realizar:**  
 1. Instalación de instancias Maestro y Réplica en contenedores Docker.  
 2. Configuración de parámetros de replicación (binlogs, usuarios replicadores, permisos).  
 3. Ejecución de scripts de carga con operaciones de lectura y escritura.  
 4. Monitoreo de métricas como *lag de réplica*, tiempo de confirmación de transacciones y recuperación tras caídas.  
-5. Análisis comparativo entre replicación asíncrona y semi-síncrona.  
+5. Análisis comparativo entre replicación asíncrona y semi-síncrona.
 
-**Herramientas utilizadas:**  
+**Herramientas a utilizar:**  
 - MySQL 8.4  
 - Docker  
 - Sysbench para benchmarking  
 - Comandos internos (`SHOW SLAVE STATUS`) para supervisar la replicación  
 
-Se documentaron también los errores encontrados y los pasos de resolución.  
+Se documentaran también los errores encontrados y los pasos de resolución.  
 
 ---
 
-# Capítulo IV: Desarrollo del tema / Resultados
+# Capítulo IV: Desarrollo del tema / Resultados esperados
 El caso de estudio seleccionado corresponde a un **sistema de reservas de productos**, similar a un e-commerce.  
 Este sistema combina un alto volumen de consultas de lectura con operaciones críticas de escritura, como la generación de pedidos.  
-Se probaron escenarios en los que el Maestro gestionaba las escrituras mientras las réplicas respondían a las consultas de lectura concurrentes.  
+Se probaran escenarios en los que el Maestro gestionara las escrituras mientras las réplicas responderan a las consultas de lectura concurrentes.
 
-**Resultados obtenidos:**  
-- **Replicación asíncrona:** permitió una rápida confirmación de transacciones, con un lag de réplica que osciló entre 1 y 3 segundos bajo carga. El riesgo identificado fue la posibilidad de leer datos obsoletos tras una falla.  
-- **Replicación semi-síncrona:** redujo el riesgo de pérdida de datos al requerir confirmación de al menos una réplica antes de validar el commit. Sin embargo, la latencia de las escrituras aumentó entre un 10% y un 20%.  
-- **Recuperación ante fallos:** se simuló la caída del nodo maestro y las réplicas continuaron sirviendo consultas de lectura, garantizando disponibilidad parcial del sistema.  
+**Resultados esperados minimamente la primera:**  
+- **Replicación asíncrona:** permitir una rápida confirmación de transacciones, con un lag de réplica que oscile entre 1 y 3 segundos bajo carga.
+- **Replicación semi-síncrona:** reducir el riesgo de pérdida de datos al requerir confirmación de al menos una réplica antes de validar el commit. Sin que suba demasiado la latencia.
+- **Recuperación ante fallos:** simular la caída del nodo maestro y probar las réplicas para consultas de lectura, garantizando disponibilidad parcial del sistema. 
 
-Estos experimentos demostraron que la replicación puede mejorar significativamente la tolerancia a fallos y la capacidad de respuesta en sistemas con alta concurrencia, aunque requiere un diseño cuidadoso para equilibrar consistencia y rendimiento.  
+Estos experimentos demostraran que la replicación puede mejorar significativamente la tolerancia a fallos y la capacidad de respuesta en sistemas con alta concurrencia, aunque requiere un diseño cuidadoso para equilibrar consistencia y rendimiento.  
 
 ---
 
 # Capítulo V: Conclusiones
 El análisis realizado confirma que la replicación es una técnica indispensable para los sistemas modernos que requieren disponibilidad continua y baja latencia.  
-
-**Hallazgos principales:**  
-- La replicación asíncrona es sencilla de implementar y ofrece buen rendimiento, aunque sacrifica consistencia temporal.  
-- La replicación semi-síncrona logra un mejor balance entre rendimiento y seguridad de datos, pero introduce cierta latencia.  
-- El diseño de topologías de replicación debe responder a las necesidades concretas del negocio: no existe una única solución universal.  
-- La replicación no reemplaza otras técnicas de alta disponibilidad como el particionado o el clustering, sino que las complementa.  
-
-En conclusión, el proyecto permitió comprender los fundamentos y los desafíos prácticos de la replicación de bases de datos, y demostró que esta técnica, correctamente implementada, mejora la robustez y confiabilidad de los sistemas de información.  
+En conclusión, el proyecto permite comprender los fundamentos y los desafíos prácticos de la replicación de bases de datos,demuestra que esta técnica, correctamente implementada, mejora la robustez y confiabilidad de los sistemas de información.  
 
 ---
 
